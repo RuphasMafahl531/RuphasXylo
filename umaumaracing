@@ -1,0 +1,112 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Uma Racing | ULTIMATE V18",
+   LoadingTitle = "Bypassing WalkSpeed Engine...",
+   LoadingSubtitle = "V18 - CFrame Injection",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local Tab = Window:CreateTab("Turbo Settings", 4483362458)
+
+_G.SprintPower = 1 -- 1 adalah normal, 2-5 adalah sangat cepat
+_G.InfStam = true
+local isSprinting = false
+
+-- 1. INFINITE STAMINA (Metode yang sudah berhasil)
+Tab:CreateToggle({
+   Name = "Infinite Stamina",
+   CurrentValue = true,
+   Flag = "StamToggle",
+   Callback = function(Value)
+       _G.InfStam = Value
+       task.spawn(function()
+           while _G.InfStam do
+               local p = game.Players.LocalPlayer
+               if p.Character then
+                   p.Character:SetAttribute("Stamina", 100)
+                   p.Character:SetAttribute("Sprinting", false)
+               end
+               task.wait()
+           end
+       end)
+   end,
+})
+
+-- 2. CFRAME SPRINT POWER (Menambah kecepatan lari)
+Tab:CreateSlider({
+   Name = "Sprint Boost Power",
+   Range = {1, 10},
+   Increment = 0.5,
+   CurrentValue = 1,
+   Flag = "BoostSlider", 
+   Callback = function(Value)
+       _G.SprintPower = Value
+   end,
+})
+
+-- DETEKSI INPUT SPRINT
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.LeftShift or input.UserInputType == Enum.UserInputType.Touch then
+        isSprinting = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftShift or input.UserInputType == Enum.UserInputType.Touch then
+        isSprinting = false
+    end
+end)
+
+-- EKSEKUSI CFRAME (Memaksa posisi karakter maju lebih jauh)
+game:GetService("RunService").Heartbeat:Connect(function()
+    local p = game.Players.LocalPlayer
+    local char = p.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+    
+    if root and hum and isSprinting and _G.SprintPower > 1 then
+        if hum.MoveDirection.Magnitude > 0 then
+            -- Memindahkan posisi karakter ke depan berdasarkan arah gerak dan power
+            root.CFrame = root.CFrame + (hum.MoveDirection * (_G.SprintPower / 5))
+        end
+    end
+end)
+
+-- 3. FITUR LENGKAP LAINNYA
+Tab:CreateToggle({
+   Name = "Anti Hit Wall (Noclip)",
+   CurrentValue = false,
+   Callback = function(Value)
+       _G.AntiHit = Value
+       game:GetService("RunService").Stepped:Connect(function()
+           if _G.AntiHit and game.Players.LocalPlayer.Character then
+               for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                   if v:IsA("BasePart") then v.CanCollide = false end
+               end
+           end
+       end)
+   end,
+})
+
+Tab:CreateButton({
+   Name = "Player ESP & Camera",
+   Callback = function()
+       for _, v in pairs(game.Players:GetPlayers()) do
+           if v ~= game.Players.LocalPlayer and v.Character then
+               local h = Instance.new("Highlight", v.Character)
+               h.FillColor = Color3.fromRGB(255, 0, 0)
+           end
+       end
+       workspace.CurrentCamera.FieldOfView = 120
+   end,
+})
+
+Rayfield:Notify({
+   Title = "V18 CFrame Active!",
+   Content = "Set Boost Power ke 3 lalu tekan sprint!",
+   Duration = 5,
+})
+
